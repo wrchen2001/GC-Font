@@ -98,6 +98,15 @@ Launch Training
     #--resume \path\to\your\pretrain_model.pdparams
   ```
 
+Note on Modules Classes:
+
+During RQ-VAE pretraining, the Decoder (and Encoder) is a standard version without attention.
+
+For main model training, the Decoder (and Encoder) is modified to integrate attention features.
+
+Pretrained weights must be loaded before the main training phase.
+
+
 ## Infer the GC-Font
 
 Run the script
