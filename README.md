@@ -98,7 +98,7 @@ Launch Training
     #--resume \path\to\your\pretrain_model.pdparams
   ```
 
-<u>Note on Modules Classes:</u>
+++Note on Modules Classes:++
 
 During RQ-VAE pretraining, the Decoder (and Encoder) is a standard version without attention.
 
