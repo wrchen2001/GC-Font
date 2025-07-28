@@ -217,9 +217,9 @@ class Model(nn.Module):
         self._encoder = content_enc_builder(1,32,256)  
 
         if decay > 0.0:  
-            self._vq_vae = ResidualVectorQuantizer(num_embeddings, embedding_dim, commitment_cost)
+            self._rq_vae = ResidualVectorQuantizer(num_embeddings, embedding_dim, commitment_cost)
         else:
-            self._vq_vae = ResidualVectorQuantizer(num_embeddings, embedding_dim,
+            self._rq_vae = ResidualVectorQuantizer(num_embeddings, embedding_dim,
                                            commitment_cost)
             
         self._decoder = dec_builder(32, 1)  
@@ -227,7 +227,7 @@ class Model(nn.Module):
 
     def forward(self, x):
         z = self._encoder(x) 
-        loss, quantized, perplexity, _ = self._vq_vae(z)
+        loss, quantized, perplexity, _ = self._rq_vae(z)
         x_recon = self._decoder(quantized)
         return loss, x_recon, perplexity
 
@@ -287,7 +287,7 @@ train_loader = DataLoader(train_dataset, batch_size=64, batch_sampler=None, drop
 model.train()
 train_res_recon_error = []
 train_res_perplexity = []
-train_vq_loss = []
+train_rq_loss = []
 
 def show(img):
     npimg = img.numpy()
@@ -303,9 +303,9 @@ for i in range(num_training_updates):
     data = data.to(device)
     optimizer.zero_grad()
 
-    vq_loss, data_recon, perplexity = model(data)
+    rq_loss, data_recon, perplexity = model(data)
     recon_error = F.mse_loss(data_recon, data) / train_data_variance
-    loss = recon_error + vq_loss
+    loss = recon_error + rq_loss
 
     # Backward pass and optimization
     loss.backward()
@@ -314,13 +314,13 @@ for i in range(num_training_updates):
     # Track training metrics
     train_res_recon_error.append(recon_error.item())
     train_res_perplexity.append(perplexity.item())
-    train_vq_loss.append(vq_loss.item())
+    train_rq_loss.append(rq_loss.item())
 
     if (i + 1) % 1000 == 0:
         print('%d iterations' % (i + 1))
         print('recon_error: %.3f' % np.mean(train_res_recon_error[-1000:]))
         print('perplexity: %.3f' % np.mean(train_res_perplexity[-1000:]))
-        print('vq_loss: %.3f' % np.mean(train_vq_loss[-1000:]))
+        print('rq_loss: %.3f' % np.mean(train_rq_loss[-1000:]))
         print()
 
 
@@ -346,8 +346,8 @@ def val_(model,validation_loader):
     valid_originals = valid_originals.to(device)
 
     # Get model outputs
-    vq_output_eval = model._encoder(valid_originals)
-    _, valid_quantize, _, _ = model._vq_vae(vq_output_eval)
+    rq_output_eval = model._encoder(valid_originals)
+    _, valid_quantize, _, _ = model._rq_vae(rq_output_eval)
     valid_reconstructions = model._decoder(valid_quantize)
     return valid_originals, valid_reconstructions
 
